@@ -1,8 +1,8 @@
 use once_cell::sync::Lazy;
-use reqwest::Client;
+use reqwest::{Client, Url};
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use uuid::Uuid;
-use wiremock::MockServer;
+use wiremock::{MockServer, Request};
 use zero2prod::startup::{get_connection_pool, Application};
 use zero2prod::{
     configuration::{get_configuration, DatabaseSettings},
@@ -28,6 +28,11 @@ pub struct TestApp {
     pub port: u16,
 }
 
+pub struct ConfirmationLinks {
+    pub html: reqwest::Url,
+    pub plain_text: reqwest::Url,
+}
+
 impl TestApp {
     pub async fn post_subscription(&self, body: String) -> reqwest::Response {
         Client::new()
@@ -37,6 +42,27 @@ impl TestApp {
             .send()
             .await
             .expect("Failed to execute request.")
+    }
+
+    pub fn get_confirmation_links(&self, email_request: &Request) -> ConfirmationLinks {
+        let body: serde_json::Value = serde_json::from_slice(&email_request.body).unwrap();
+
+        let get_link = |s: &str| {
+            let links: Vec<_> = linkify::LinkFinder::new()
+                .links(s)
+                .filter(|l| *l.kind() == linkify::LinkKind::Url)
+                .collect();
+            assert_eq!(links.len(), 1);
+            let raw_link = links[0].as_str().to_owned();
+            let mut link = Url::parse(&raw_link).unwrap();
+            assert_eq!(link.host_str().unwrap(), "127.0.0.1");
+            link.set_port(Some(self.port)).unwrap();
+            link
+        };
+
+        let html = get_link(&body["HtmlBody"].as_str().unwrap());
+        let plain_text = get_link(&body["TextBody"].as_str().unwrap());
+        ConfirmationLinks { html, plain_text }
     }
 }
 pub async fn spawn_app() -> TestApp {
