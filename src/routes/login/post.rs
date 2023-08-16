@@ -38,7 +38,8 @@ pub async fn login(
             };
 
             let response = HttpResponse::SeeOther()
-                .insert_header((LOCATION, format!("/login")))
+                .insert_header((LOCATION, "/login"))
+                .insert_header(("Set-Cookie", format!("_flash={e}")))
                 .finish();
             Err(InternalError::from_response(e, response))
         }
