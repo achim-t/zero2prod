@@ -1,5 +1,5 @@
+use actix_web::http::header::LOCATION;
 use actix_web::HttpResponse;
-use reqwest::header::LOCATION;
 
 pub fn e500<T>(e: T) -> actix_web::Error
 where
