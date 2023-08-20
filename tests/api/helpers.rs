@@ -49,14 +49,28 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
 
-    pub async fn post_newsletters(&self, body: serde_json::Value) -> reqwest::Response {
+    pub async fn post_publish_newsletters<Body>(&self, body: &Body) -> reqwest::Response
+    where
+        Body: serde::Serialize,
+    {
         self.api_client
-            .post(&format!("{}/newsletters", &self.address))
-            .basic_auth(&self.test_user.username, Some(&self.test_user.password))
-            .json(&body)
+            .post(&format!("{}/admin/newsletters", &self.address))
+            .form(body)
             .send()
             .await
             .expect("failed to execute request.")
+    }
+
+    pub async fn get_pushlish_newsletter(&self) -> reqwest::Response {
+        self.api_client
+            .get(&format!("{}/admin/newsletters", &self.address))
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
+    pub async fn get_pushlish_newsletter_html(&self) -> String {
+        self.get_pushlish_newsletter().await.text().await.unwrap()
     }
 
     pub fn get_confirmation_links(&self, email_request: &Request) -> ConfirmationLinks {
@@ -215,6 +229,14 @@ impl TestUser {
         .execute(pool)
         .await
         .expect("Failed to store test users.");
+    }
+
+    pub async fn login(&self, app: &TestApp) {
+        app.post_login(&serde_json::json!({
+            "username": &self.username,
+            "password": &self.password
+        }))
+        .await;
     }
 }
 
