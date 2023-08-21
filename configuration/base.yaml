@@ -4,6 +4,7 @@ application:
   hmac_secret: "super-long-and-secret-random-key-needed-to-verify-message-integrity"
 database:
   host: "127.0.0.1"
+  port: 5432
   username: "postgres"
   password: "dbpass"
   database_name: "newsletter"
