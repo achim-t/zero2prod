@@ -6,7 +6,7 @@ use fake::faker::name::en::Name;
 use fake::Fake;
 use wiremock::{
     matchers::{any, method, path},
-    Mock, MockBuilder, ResponseTemplate,
+    Mock, ResponseTemplate,
 };
 
 #[tokio::test]
@@ -199,8 +199,4 @@ async fn concurrent_form_submission_is_handled_gracefully() {
         response2.text().await.unwrap()
     );
     app.dispatch_all_pending_emails().await;
-}
-
-fn when_sending_an_email() -> MockBuilder {
-    Mock::given(path("/email")).and(method("POST"))
 }
